@@ -1,125 +1,148 @@
-from pathlib import Path
-import zipfile, textwrap
-
-root = Path("/mnt/data/MVS_Diamond_User_Admin")
-root.mkdir(exist_ok=True)
-
-user_html = r'''<!doctype html>
-<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MVS Diamond — User</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Files</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f7ff;color:#172033}.app{max-width:480px;margin:auto;padding:15px}
-.hero{padding:22px;border-radius:24px;color:#fff;background:linear-gradient(135deg,#1264ff,#19bfff);box-shadow:0 15px 35px #1769ff30}
-.card{background:#fff;border:1px solid #e1e8f2;padding:16px;border-radius:18px;margin-top:12px;box-shadow:0 8px 25px #173b6b12}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.item{border:1px solid #e1e8f2;border-radius:13px;padding:12px;margin:8px 0}
-button{border:0;border-radius:11px;padding:11px 14px;background:#1769ff;color:#fff;font-weight:700;cursor:pointer}.off{background:#94a3b8}
-input,select{width:100%;padding:11px;margin:6px 0 10px;border:1px solid #dbe3ef;border-radius:10px}
-.muted{color:#718096;font-size:12px}.ok{color:#079455}.err{color:#d33}
-</style></head><body><div class="app">
-<div class="hero"><h1>💎 MVS Diamond</h1><p>Diamond, Shell, UC ও অন্যান্য প্যাকেজ</p></div>
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:#fff;
+    color:#777;
+    font-family:Arial,Helvetica,sans-serif;
+    padding:34px 24px;
+  }
+  .top-title{
+    max-width:1450px;
+    margin:0 auto 22px;
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:24px;
+    color:#333;
+  }
+  .files{
+    width:min(1450px,100%);
+    margin:auto;
+    border:2px solid #ddd;
+    border-radius:42px;
+    overflow:hidden;
+    background:#fafafa;
+    box-shadow:0 3px 14px rgba(0,0,0,.07);
+  }
+  .file{
+    position:relative;
+    min-height:245px;
+    display:flex;
+    align-items:center;
+    gap:45px;
+    padding:35px 78px;
+    cursor:pointer;
+    transition:background .18s ease,transform .18s ease;
+  }
+  .file:hover{background:#f4f7fb}
+  .file:active{transform:scale(.995)}
+  .file+.file{border-top:2px solid #dedede}
+  .globe{
+    width:82px;
+    height:82px;
+    flex:0 0 82px;
+    border:7px solid #2878df;
+    border-radius:50%;
+    position:relative;
+  }
+  .globe .v1,.globe .v2{
+    position:absolute;
+    top:-7px;
+    height:82px;
+    width:30px;
+    border-left:5px solid #2878df;
+    border-right:5px solid #2878df;
+    border-radius:50%;
+  }
+  .globe .v1{left:19px}
+  .globe .v2{display:none}
+  .globe .h{
+    position:absolute;
+    left:-7px;
+    right:-7px;
+    top:31px;
+    height:7px;
+    background:#2878df;
+  }
+  .filename{
+    flex:1;
+    min-width:0;
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:clamp(27px,4vw,52px);
+    line-height:1.2;
+    color:#777;
+    overflow-wrap:anywhere;
+  }
+  .arrow{
+    width:31px;
+    height:31px;
+    flex:0 0 31px;
+    border-top:6px solid #777;
+    border-right:6px solid #777;
+    transform:rotate(45deg);
+    margin-right:7px;
+  }
+  .notice{
+    position:fixed;
+    left:50%;
+    bottom:25px;
+    transform:translate(-50%,20px);
+    background:#1f2937;
+    color:white;
+    padding:12px 18px;
+    border-radius:10px;
+    opacity:0;
+    pointer-events:none;
+    transition:.25s;
+    box-shadow:0 8px 25px rgba(0,0,0,.2);
+  }
+  .notice.show{opacity:1;transform:translate(-50%,0)}
+  @media(max-width:650px){
+    body{padding:18px 10px}
+    .files{border-radius:27px}
+    .file{min-height:145px;padding:22px 25px;gap:18px}
+    .file+.file{border-top-width:2px}
+    .globe{width:52px;height:52px;flex-basis:52px;border-width:5px}
+    .globe .v1{left:12px;top:-5px;height:52px;width:20px;border-width:4px}
+    .globe .h{left:-5px;right:-5px;top:19px;height:5px}
+    .filename{font-size:22px}
+    .arrow{width:20px;height:20px;flex-basis:20px;border-width:4px;margin-right:2px}
+  }
+</style>
+</head>
+<body>
 
-<div class="card"><h3>অ্যাকাউন্ট</h3>
-<button onclick="login('Telegram')">Telegram Login</button>
-<button onclick="login('Gmail')" style="background:#333">Gmail Sign Up</button>
-<p id="loginMsg" class="muted">একটি account নির্বাচন করুন।</p></div>
+<div class="top-title">Files</div>
 
-<div class="card"><h3>🎁 Free Spin</h3><p class="muted">প্রথম login-এর পর spin ব্যবহার করুন। Monthly reward সবসময় eligible reward হিসেবে থাকবে।</p>
-<button onclick="spin()">SPIN</button><p id="spinMsg" class="ok"></p></div>
+<div class="files">
+  <div class="file" onclick="selectFile('MVS_Admin_Full_Control.html')">
+    <div class="globe"><span class="v1"></span><span class="h"></span></div>
+    <div class="filename">MVS_Admin_Full_Control.html</div>
+    <div class="arrow"></div>
+  </div>
 
-<div class="card"><h3>💎 Packages</h3><div id="products"></div></div>
-
-<div class="card"><h3>💳 Payment</h3>
-<select id="method" onchange="showPay()"><option value="">Payment Method</option><option>bKash</option><option>Nagad</option><option>Rocket</option><option>USDT</option><option>Upay</option></select>
-<p id="payInfo" class="muted"></p>
-<input id="amount" type="number" min="10" placeholder="Amount — minimum ৳10">
-<input id="trx" placeholder="Transaction ID">
-<p class="muted">⚠️ টাকা পাঠানোর আগে নম্বর/ঠিকানা ভালোভাবে মিলিয়ে নিন। OTP, PIN বা password দেবেন না।</p>
-<button onclick="submitOrder()">অর্ডার Submit করুন</button><p id="msg"></p></div>
-
-<div class="card"><h3>📋 Order History</h3><div id="history" class="muted"></div></div>
+  <div class="file" onclick="selectFile('user_full_control_firebase.html')">
+    <div class="globe"><span class="v1"></span><span class="h"></span></div>
+    <div class="filename">user_full_control_firebase.html</div>
+    <div class="arrow"></div>
+  </div>
 </div>
+
+<div id="notice" class="notice"></div>
+
 <script>
-const payments={bKash:'01726355520',Nagad:'01347314711',Rocket:'01794959178',USDT:'USDT address পরে সেট করা হবে',Upay:'বর্তমানে OFF'};
-const products=[['100 Diamond',90],['310 Diamond',250],['520 Diamond',400],['Weekly',160],['Weekly Lite',80],['Monthly',750],['Level Up Pass',300],['UC Package',200],['Shell Package',130]];
-let selected=null, orders=JSON.parse(localStorage.getItem('mvs_orders')||'[]');
-productsEl.innerHTML=products.map((p,i)=>`<div class="item"><b>${p[0]}</b><br>৳${p[1]}<br><button onclick="selectP(${i})">Buy / Order</button></div>`).join('');
-function login(t){loginMsg.textContent=t+' login selected';}
-function selectP(i){selected=products[i];amount.value=selected[1];msg.textContent='';}
-function showPay(){const m=method.value;payInfo.textContent=m?(m==='Upay'?'Upay বর্তমানে OFF':'Payment: '+payments[m]):'';}
-function spin(){spinMsg.textContent='🎉 Monthly reward eligibility confirmed!';}
-function submitOrder(){
- if(!selected)return msgf('আগে একটি package নির্বাচন করুন',1);
- const m=method.value,a=Number(amount.value),t=trx.value.trim();
- if(!m)return msgf('Payment method নির্বাচন করুন',1);
- if(m==='Upay')return msgf('Upay বর্তমানে OFF',1);
- if(a<10)return msgf('সর্বনিম্ন ৳10',1);
- if(!t)return msgf('Transaction ID দিন',1);
- orders.unshift({id:'MVS-'+Date.now(),product:selected[0],amount:a,method:m,trx:t,status:'Pending',time:new Date().toLocaleString()});
- localStorage.setItem('mvs_orders',JSON.stringify(orders));render();msgf('Order Pending — Admin Panel-এ দেখা যাবে।');
+function selectFile(name){
+  const n=document.getElementById('notice');
+  n.textContent='Selected: '+name;
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),1600);
 }
-function msgf(x,e){msg.textContent=x;msg.className=e?'err':'ok'}
-function render(){history.innerHTML=orders.length?orders.map(o=>`<div class="item"><b>${o.product}</b><br>৳${o.amount} • ${o.method}<br>TRX: ${o.trx}<br>Status: ${o.status}</div>`).join(''):'কোনো অর্ডার নেই।'}render();
-</script></body></html>'''
-
-admin_html = r'''<!doctype html>
-<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MVS Diamond — Admin</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#eef3f9;color:#172033}.app{max-width:900px;margin:auto;padding:20px}
-.card{background:#fff;padding:18px;border-radius:18px;margin:12px 0;box-shadow:0 8px 25px #0001}.row{border:1px solid #dfe7f1;padding:12px;border-radius:12px;margin:8px 0}
-input,select{width:100%;padding:11px;margin:5px 0 10px;border:1px solid #dbe3ef;border-radius:10px}
-button{border:0;border-radius:10px;padding:10px 13px;background:#1769ff;color:white;font-weight:700;margin:3px;cursor:pointer}.ok{background:#079455}.bad{background:#d33}.hide{display:none}.muted{font-size:12px;color:#718096}
-</style></head><body><div class="app"><h1>⚙️ MVS Diamond Admin</h1>
-<div id="login" class="card"><h3>Admin Login</h3><input id="pass" type="password" placeholder="Admin password">
-<button onclick="doLogin()">Login</button><p class="muted">Demo password: MVS-ADMIN-2026</p></div>
-<div id="panel" class="hide">
-<div class="card"><h2>💳 Payment Settings</h2>
-<label>bKash</label><input id="bk" value="01726355520"><label>Nagad</label><input id="ng" value="01347314711">
-<label>Rocket</label><input id="rk" value="01794959178"><label>USDT Address</label><input id="usdt" placeholder="পরে সেট করুন">
-<label>Upay</label><select id="up"><option>OFF</option><option>ON</option></select><button onclick="save()">Save Settings</button></div>
-<div class="card"><h2>🖼️ Banner / Video</h2><input id="b1" placeholder="Banner 1 URL"><input id="b2" placeholder="Banner 2 URL"><input id="video" placeholder="Video URL"><button onclick="save()">Save Media</button></div>
-<div class="card"><h2>📦 Product Prices</h2><div id="prices"></div><button onclick="savePrices()">Save Prices</button></div>
-<div class="card"><h2>📋 Orders</h2><div id="orders"></div></div>
-</div></div>
-<script>
-const products=['100 Diamond','310 Diamond','520 Diamond','Weekly','Weekly Lite','Monthly','Level Up Pass','UC Package','Shell Package'];
-let s=JSON.parse(localStorage.getItem('mvs_settings')||'{}');
-function doLogin(){if(pass.value==='MVS-ADMIN-2026'){login.classList.add('hide');panel.classList.remove('hide');load()}else alert('Password ভুল')}
-function load(){
-bk.value=s.bk||'01726355520';ng.value=s.ng||'01347314711';rk.value=s.rk||'01794959178';usdt.value=s.usdt||'';
-b1.value=s.b1||'';b2.value=s.b2||'';video.value=s.video||'';up.value=s.up||'OFF';
-let p=s.prices||[90,250,400,160,80,750,300,200,130];
-prices.innerHTML=products.map((x,i)=>`<label>${x}</label><input id="p${i}" type="number" value="${p[i]}">`).join('');renderOrders()}
-function save(){s={...s,bk:bk.value,ng:ng.value,rk:rk.value,usdt:usdt.value,b1:b1.value,b2:b2.value,video:video.value,up:up.value};localStorage.setItem('mvs_settings',JSON.stringify(s));alert('Saved')}
-function savePrices(){s.prices=products.map((_,i)=>+document.getElementById('p'+i).value);localStorage.setItem('mvs_settings',JSON.stringify(s));alert('Prices saved')}
-function renderOrders(){let os=JSON.parse(localStorage.getItem('mvs_orders')||'[]');orders.innerHTML=os.length?os.map((o,i)=>`<div class="row"><b>${o.product}</b><br>৳${o.amount} • ${o.method}<br>TRX: ${o.trx}<br>Status: ${o.status}<br><button class="ok" onclick="status(${i},'Success')">Success</button><button class="bad" onclick="status(${i},'Cancelled')">Cancel</button></div>`).join(''):'No orders'}
-function status(i,x){let os=JSON.parse(localStorage.getItem('mvs_orders')||'[]');os[i].status=x;localStorage.setItem('mvs_orders',JSON.stringify(os));renderOrders()}
-</script></body></html>'''
-
-(root/"User.html").write_text(user_html, encoding="utf-8")
-(root/"Admin.html").write_text(admin_html, encoding="utf-8")
-(root/"README.txt").write_text("""MVS Diamond User + Admin starter
-
-Payment:
-bKash: 01726355520
-Nagad: 01347314711
-Rocket: 01794959178
-USDT: পরে সেট করতে হবে
-Upay: OFF
-
-Demo admin password: MVS-ADMIN-2026
-
-Note:
-এই ZIP-টি frontend/demo starter। Real production use-এর জন্য Firebase/secure
-backend, server-side authentication, database rules এবং payment/order
-verification আলাদাভাবে configure করতে হবে।
-""", encoding="utf-8")
-
-zip_path=Path("/mnt/data/MVS_Diamond_User_Admin.zip")
-with zipfile.ZipFile(zip_path,"w",zipfile.ZIP_DEFLATED) as z:
-    for f in root.iterdir():
-        z.write(f, f.name)
-
-print("ফাইল তৈরি হয়েছে।")
-print("ZIP:", zip_path)
-print("ভিতরে User.html, Admin.html এবং README.txt আছে।")
+</script>
+</body>
+</html>
